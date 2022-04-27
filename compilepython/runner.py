@@ -75,10 +75,10 @@ def initprocess():
 def run():
     sys.stdout = open(str(os.getpid()) + ".out", "w")
     sys.stderr = open(str(os.getpid()) + ".err", "w")
-    cwd = os.getcwd()
-    os.chdir(cwd +"/examples/processes/ShelfGenie.com")
-    remove("public")
-    test = cli_passthrough("npm run build")
+
+    cli_passthrough("bash examples/processes/compilepython/00.sh")
+    cli_passthrough("bash examples/processes/compilepython/01.sh")
+    cli_passthrough("bash examples/processes/compilepython/02.sh")
 
 @click.group(context_settings=context_settings)
 @click.version_option(prog_name=PROJECT_NAME.capitalize(), version=VERSION)

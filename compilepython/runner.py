@@ -39,6 +39,25 @@ tmp_dirs = [
     '.tmp/runners/'
     ]
 
+
+def updt(total, progress):
+    """
+    Displays or updates a console progress bar.
+
+    Original source: https://stackoverflow.com/a/15860757/1391441
+    """
+    barLength, status = 20, ""
+    progress = float(progress) / float(total)
+    if progress >= 1.:
+        progress, status = 1, "\r\n"
+    block = int(round(barLength * progress))
+    text = "\r[{}] {:.0f}% {}".format(
+        "#" * block + "-" * (barLength - block), round(progress * 100, 0),
+        status)
+    sys.stdout.write(text)
+    sys.stdout.flush()
+
+
 def progressbar(it, prefix="", size=60, file=sys.stdout):
     count = len(it)
     def show(j):
@@ -72,9 +91,9 @@ def initprocess():
         "eventsfile": "/sg.events",
     }
 
-def run():
-    sys.stdout = open(str(os.getpid()) + ".out", "w")
-    sys.stderr = open(str(os.getpid()) + ".err", "w")
+def run(uuid_name):
+    sys.stdout = open('.tmp/runners/runs/' + uuid_name + "/process.out", "w")
+    sys.stderr = open('.tmp/runners/runs/' + uuid_name + "/process.err", "w")
 
     cli_passthrough("bash examples/processes/compilepython/00.sh")
     cli_passthrough("bash examples/processes/compilepython/01.sh")
@@ -110,22 +129,32 @@ def run_cmd():
         os.mkdir(dir)
     processinfo = initprocess()
 
+    with open('examples/processes/compilepython/checkpointlines') as f:
+        checkpointlines = f.readlines()
+        checkpointlines = [s.strip() for s in checkpointlines]
+
     with open('.tmp/runners/runs/' + uuid_name + "/process.lines", 'w') as f:
-        f.write("##")
+        f.write("")
     with open('.tmp/runners/runs/' + uuid_name + "/process.events", 'w') as f:
-        f.write("##")
+        f.write("")
     import multiprocessing
     import sys
 
-    p1 =  multiprocessing.Process(target=run)
+    p1 =  multiprocessing.Process(target=run, args=(uuid_name,))
     p1.start()
 
-    for i in progressbar(range(1), "Computing: ", 40):
-        time.sleep(0.1)
-
-## epxose
-##
-## run
-## watch
+    runs = 3
+    count = 0
+    updt(runs, count)
+    while count <= runs - 1:
+        time.sleep(1)
+        with open('.tmp/runners/runs/' + uuid_name + "/process.out") as f:
+            lines = f.readlines()
+            lines = [s.strip() for s in lines]
+            count = 0
+            for line in checkpointlines:
+                if line in lines:
+                    count = count + 1
+                    updt(runs, count)
 
 cli.add_command(run_group)

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="noderunner",
+    name="runnercompilepython",
     version='0.1',
     install_requires=[
         'requests',
@@ -12,6 +12,6 @@ setup(
     packages=find_packages(),
     entry_points='''
         [console_scripts]
-        noderunner=noderunner.runner:cli
+        runnercompilepython=compilepython.runner:cli
     ''',
 )

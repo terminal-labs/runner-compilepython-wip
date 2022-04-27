@@ -66,16 +66,17 @@ def create_dirs(dirs):
 
 def initprocess():
     return {
-        "historyfile": "/home/user/Desktop/allup/workspace/process/ShelfGenie.com/logs/history.log",
-        "stderrfile": "/home/user/Desktop/allup/workspace/process/ShelfGenie.com/logs/hstderr.log",
-        "linesfile": "/home/user/Desktop/allup/workspace/process/sg.lines",
-        "eventsfile": "/home/user/Desktop/allup/workspace/process/sg.events",
+        "historyfile": "/history.log",
+        "stderrfile": "/hstderr.log",
+        "linesfile": "/sg.lines",
+        "eventsfile": "/sg.events",
     }
 
 def run():
     sys.stdout = open(str(os.getpid()) + ".out", "w")
     sys.stderr = open(str(os.getpid()) + ".err", "w")
-    os.chdir("/home/user/Desktop/allup/workspace/process/ShelfGenie.com")
+    cwd = os.getcwd()
+    os.chdir(cwd +"/examples/processes/ShelfGenie.com")
     remove("public")
     test = cli_passthrough("npm run build")
 

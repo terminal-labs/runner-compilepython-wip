@@ -13,22 +13,65 @@ from pathlib import Path
 
 import requests
 import click
+from flask import Flask, jsonify, request
 
 from cli_passthrough import cli_passthrough
 
 from jobrunner.progressengine import updt, register_run, get_checkpointlines, track_run, get_track_data
 from jobrunner.config import tmp_dirs
 from jobrunner.utils import remove, create_dirs, init_runner_env
-from jobrunner.core import app, simplejob
+from jobrunner.core import app, simplejob, from_message, get_message_localserve
 
 VERSION = "0.1"
 PROJECT_NAME = "compilepython"
 context_settings = {"help_option_names": ["-h", "--help"]}
 
-def pre_run():
-    uuid_name = uuid.uuid4().hex
+def pre_run(uuid_name=None):
+    if not uuid_name:
+        uuid_name = uuid.uuid4().hex
+    create_dirs([".tmp",".tmp/processes", ".tmp/processes/"  + uuid_name])
+    create_dirs([".tmp",".tmp/runners", ".tmp/runners/runs"])
+    create_dirs(tmp_dirs)
+
+
+    test00 = """
+wget https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz
+    """
+    with open(".tmp/processes/"  + uuid_name + "/00.sh", 'w') as f:
+        f.write(test00)
+
+    test01 = """
+tar xzf Python-3.6.9.tgz
+    """
+    with open(".tmp/processes/"  + uuid_name + "/01.sh", 'w') as f:
+        f.write(test01)
+
+    test02 = """
+cd Python-3.6.9
+./configure --enable-optimizations
+    """
+    with open(".tmp/processes/"  + uuid_name + "/02.sh", 'w') as f:
+        f.write(test02)
+
+    checkpointeventsfile = """
+checking build system type...
+checking whether we are using the GNU C compiler...
+creating Makefile
+    """
+    with open(".tmp/processes/"  + uuid_name + "/checkpointevents", 'w') as f:
+        f.write(checkpointeventsfile)
+
+    checkpointlinessfile = """
+checking build system type...
+checking for C compiler default output file name... a.out
+checking for --with-undefined-behavior-sanitizer...
+creating Makefile
+    """
+    with open(".tmp/processes/"  + uuid_name + "/checkpointlines", 'w') as f:
+        f.write(checkpointlinessfile)
+
     register_run(uuid_name)
-    checkpointlines = get_checkpointlines('examples/processes/compilepython/checkpointlines')
+    checkpointlines = get_checkpointlines(".tmp/processes/"  + uuid_name + '/checkpointlines')
     return uuid_name, checkpointlines
 
 def kickoff_run(uuid_name):
@@ -44,14 +87,28 @@ def run(uuid_name, capturelogs=False):
         sys.stdout = open('.tmp/runners/runs/' + uuid_name + "/process.out", "w")
         sys.stderr = open('.tmp/runners/runs/' + uuid_name + "/process.err", "w")
 
-    cli_passthrough("bash examples/processes/compilepython/00.sh")
-    cli_passthrough("bash examples/processes/compilepython/01.sh")
-    cli_passthrough("bash examples/processes/compilepython/02.sh")
+    create_dirs([".tmp",".tmp/processes", ".tmp/processes/"  + uuid_name])
+    os.chdir(".tmp/processes/"  + uuid_name)
+
+    cli_passthrough("bash 00.sh")
+    cli_passthrough("bash 01.sh")
+    cli_passthrough("bash 02.sh")
+
+@app.route('/api/preppackage', methods=['POST'])
+def preppackage():
+    message = request.json
+    payload_obj = from_message(message)
+    name = payload_obj["name"]
+    uuid_name = payload_obj["uuid_name"]
+    jobid = payload_obj["jobid"]
+    get_message_localserve(message)
+    return {}
 
 @app.route('/track')
-def urltrack():
+@app.route('/track/<uuid_name>')
+def urltrack(uuid_name=None):
     init_runner_env()
-    uuid_name, checkpointlines = pre_run()
+    uuid_name, checkpointlines = pre_run(uuid_name)
     kickoff_run(uuid_name)
     kickoff_tracker(uuid_name, checkpointlines)
     return {"uuid_name": uuid_name}

@@ -13,14 +13,14 @@ from pathlib import Path
 
 import requests
 import click
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 
 from cli_passthrough import cli_passthrough
 
 from jobrunner.progressengine import updt, register_run, get_checkpointlines, track_run, get_track_data
 from jobrunner.config import tmp_dirs
 from jobrunner.utils import remove, create_dirs, init_runner_env
-from jobrunner.core import app, simplejob, from_message, get_message_localserve
+from jobrunner.core import app, simplejob, from_message, get_message_localserve, creatzip
 
 VERSION = "0.1"
 PROJECT_NAME = "compilepython"
@@ -103,6 +103,17 @@ def preppackage():
     jobid = payload_obj["jobid"]
     get_message_localserve(message)
     return {}
+
+@app.route('/prepdelivery/<uuid_name>',)
+def prepdelivery(uuid_name):
+    create_dirs(tmp_dirs)
+    print("got it")
+    creatzip(".tmp/server/workspace/" + uuid_name, ".tmp/processes/"  + uuid_name)
+    return {}
+
+@app.route('/builds/<uuid_name>')
+def builds_func(uuid_name):
+    return send_from_directory(os.path.abspath(os.getcwd()) + "/.tmp/server/workspace", uuid_name)
 
 @app.route('/track')
 @app.route('/track/<uuid_name>')

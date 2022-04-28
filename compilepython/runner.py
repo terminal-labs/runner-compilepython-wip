@@ -56,14 +56,12 @@ cd Python-3.6.9
     checkpointeventsfile = """
 checking build system type...
 checking whether we are using the GNU C compiler...
-creating Makefile
     """
     with open(".tmp/processes/"  + uuid_name + "/checkpointevents", 'w') as f:
         f.write(checkpointeventsfile)
 
     checkpointlinessfile = """
 checking build system type...
-checking for C compiler default output file name... a.out
 checking for --with-undefined-behavior-sanitizer...
 creating Makefile
     """
